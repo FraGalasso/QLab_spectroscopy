@@ -13,7 +13,7 @@ dependencies: functions, data_prep_lecroy, linewidths,
 
 For TEMPERATURE
 dependencies:
--data_prep_lecroy on all files
--Fra rough fit and find peaks
--Marta calibrate and remove 2.5 gamma around peaks
--Fra refit the data with holes to extract temperature estimate 
+- data_prep_lecroy on all files
+- Fra rough fit and find peaks. Produces files Fixed_ld00000_peaks_fit.csv and Fixed_ld00000_peaks_fit_offset.csv
+- Marta calibrates and removes 2.5 gamma around peaks using spectroscopy_temperature.py
+- Fra refit the data with holes to extract temperature estimate 
