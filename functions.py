@@ -3,6 +3,7 @@ from scipy.signal import find_peaks, peak_widths
 import matplotlib.pyplot as plt
 import pandas as pd
 
+#DATA PREP
 
 def crop_to_min_max(time, laser_voltage, piezo_voltage, ld_volt=None):
     '''Crops time and voltage readings in order to include just one
@@ -78,8 +79,7 @@ def fit_piezo_line(time, piezo_voltage):
     
 
     return piezo_fit
-
-
+#PEAKS
 def peaks(piezo_voltage, laser_voltage, height, distance):
     '''
     Finds peaks in readings from the photodiode.
@@ -191,33 +191,7 @@ def weighted_avg(x, dx):
 
     return avg, std
 
-
-def save_to_csv(timestamps, volt_laser, volt_piezo, piezo_fitted, output_file):
-    """
-    Save the cropped and fitted data to a CSV file with the specified columns.
-
-    Parameters:
-    - timestamps: Array of timestamps
-    - volt_laser: Array of laser voltages
-    - volt_piezo: Array of piezo voltages
-    - piezo_fitted: Array of fitted piezo voltage values
-    - output_file: Path to the output CSV file
-    """
-
-    # Create a DataFrame with the data
-    data = {
-        'timestamp': timestamps,
-        'volt_laser': volt_laser,
-        'volt_piezo': volt_piezo,
-        'piezo_fitted': piezo_fitted
-    }
-
-    df = pd.DataFrame(data)
-
-    # Save the DataFrame to a CSV file
-    df.to_csv(output_file, index=False)
-    print(f"Data saved to {output_file}")
-
+#CALIBRATION
 
 def lin_quad_fits(x, y):
     # Perform linear fit
@@ -264,7 +238,67 @@ def plot_fits(x, y, x_label, y_label, title, file_name, save):
     else:
         plt.show()
     return coeffs_1, coeffs_2
-        
+
+#REMOVING PEAKS
+def remove_singlepeak_data(data, beginning_time, end_time):
+    '''
+    Removes data and corresponding frequencies within the specified time window [beginning_time, end_time].
+    '''
+    # Create a mask for values outside the [beginning_time, end_time] interval
+    mask = (data['timestamp'] < beginning_time) | (data['timestamp'] > end_time)
+    
+    # Apply the mask to filter the data and frequencies
+    cropped_data = data[mask]
+    
+    return cropped_data
+
+
+def remove_peaks(peaks_mean, peaks_gamma, data, gamma_factor):
+    '''
+    Removes regions around peaks in peaks_mean from "data" and "frequencies",
+    where the region is defined by gamma_factor * gamma around each peak.
+    '''
+
+    # Make copies of the original data and frequencies
+    new_data = data.copy()
+
+    # Loop through peaks and remove regions
+    for mean, gamma in zip(peaks_mean, peaks_gamma):
+        begin_time = mean - gamma_factor * gamma
+        end_time = mean + gamma_factor * gamma
+        new_data = remove_singlepeak_data(new_data, begin_time, end_time)
+
+    return new_data
+
+
+#LOGISTICS: SAVING AND PLOTTING
+def save_to_csv(timestamps, volt_laser, volt_piezo, piezo_fitted, output_file):
+    """
+    Save the cropped and fitted data to a CSV file with the specified columns.
+
+    Parameters:
+    - timestamps: Array of timestamps
+    - volt_laser: Array of laser voltages
+    - volt_piezo: Array of piezo voltages
+    - piezo_fitted: Array of fitted piezo voltage values
+    - output_file: Path to the output CSV file
+    """
+
+    # Create a DataFrame with the data
+    data = {
+        'timestamp': timestamps,
+        'volt_laser': volt_laser,
+        'volt_piezo': volt_piezo,
+        'piezo_fitted': piezo_fitted
+    }
+
+    df = pd.DataFrame(data)
+
+    # Save the DataFrame to a CSV file
+    df.to_csv(output_file, index=False)
+    print(f"Data saved to {output_file}")
+
+      
 def plotting(x, y, x_label, y_label, title, file_name, save):
     plt.figure(figsize=(12, 6))
     plt.plot(x, y, label='Data', color='green')
@@ -280,7 +314,6 @@ def plotting(x, y, x_label, y_label, title, file_name, save):
         plt.close()
     else:
         plt.show()
-
 
 def scattering(x, y, x_label, y_label, title, file_name, save):
     plt.figure(figsize=(12, 6))
@@ -315,37 +348,22 @@ def plotting3(x, y1, y2, y3, x_label, y1_label, y2_label, y3_label, title, file_
     else:
         plt.show()
 
+def scatter3(x, y1, y2, y3, x_label, y1_label, y2_label, y3_label, title, file_name, save):
+    plt.figure(figsize=(12, 6))
+    plt.scatter(x, y1, label=y1_label, color='green')
+    plt.scatter(x, y2, label=y2_label, color='blue')
+    plt.scatter(x, y3, label=y3_label, color='red')
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.grid()
+    plt.tight_layout()
+    if save:
+        plt.savefig(file_name)
+        plt.close()
+    else:
+        plt.show()
 
-def remove_singlepeak_data(data, beginning_time, end_time):
-    '''
-    Removes data and corresponding frequencies within the specified time window [beginning_time, end_time].
-    '''
-    # Create a mask for values outside the [beginning_time, end_time] interval
-    mask = (data['timestamp'] < beginning_time) | (data['timestamp'] > end_time)
-    
-    # Apply the mask to filter the data and frequencies
-    cropped_data = data[mask]
-    
-    return cropped_data
 
 
-def remove_peaks(peaks_mean, peaks_gamma, data, gamma_factor):
-    '''
-    Removes regions around peaks in peaks_mean from "data" and "frequencies",
-    where the region is defined by gamma_factor * gamma around each peak.
-    '''
-
-    # Make copies of the original data and frequencies
-    new_data = data.copy()
-
-    # Loop through peaks and remove regions
-    for mean, gamma in zip(peaks_mean, peaks_gamma):
-        begin_time = mean - gamma_factor * gamma
-        end_time = mean + gamma_factor * gamma
-        new_data = remove_singlepeak_data(new_data, begin_time, end_time)
-
-    return new_data
-
-def calibrate(x, coeffs1):
-    new_x = coeffs1[0] * x + coeffs1[1]
-    return new_x
