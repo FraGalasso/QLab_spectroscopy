@@ -113,7 +113,7 @@ doff = np.array(doff)
 
 print(x0_list)
 
-pf.plot_time_laser_fit(volt_piezo, residuals, f'{folder}/figures/find_peaks/residuals_{title}.png',
+pf.plot_piezo_laser_fit(volt_piezo, residuals, f'{folder}/figures/find_peaks/residuals_{title}.png',
                        A_list, x0_list, gamma_list, off_list, piezo_peaks, y_peaks, save=True)
 
 freq = [377108945610922.8, 377109126401922.8, 377109307192922.8,
