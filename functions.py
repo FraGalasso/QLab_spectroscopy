@@ -112,6 +112,10 @@ def peaks(piezo_voltage, laser_voltage, height, distance):
 
 # CALIBRATION
 
+def calibrate(x, coeffs1):
+    new_x = coeffs1[0] * x + coeffs1[1]
+    return new_x
+    
 
 def lin_quad_fits(x, y):
     # Perform linear fit
@@ -162,7 +166,6 @@ def plot_fits(x, y, x_label, y_label, title, file_name, save):
 
 # REMOVING PEAKS
 
-
 def remove_singlepeak_data(data, beginning_time, end_time):
     '''
     Removes data and corresponding frequencies within the specified time window [beginning_time, end_time].
@@ -196,6 +199,10 @@ def remove_peaks(peaks_mean, peaks_gamma, data, gamma_factor):
 
 
 # LOGISTICS: SAVING AND PLOTTING
+def ensure_dir(directory):
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+
 def save_to_csv(timestamps, volt_laser, volt_piezo, piezo_fitted, output_file):
     """
     Save the cropped and fitted data to a CSV file with the specified columns.
