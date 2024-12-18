@@ -4,7 +4,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.signal import find_peaks
 import fit_peaks as fp
-import plotting_functions as pf
+import functions as fn
 
 
 def transmission(x, slope, intercept, scale1, scale2, scale3, mean1, mean2, mean3, sigma1, sigma2, sigma3):
@@ -113,7 +113,7 @@ doff = np.array(doff)
 
 print(x0_list)
 
-pf.plot_piezo_laser_fit(volt_piezo, residuals, f'{folder}/figures/find_peaks/residuals_{title}.png',
+fn.plot_piezo_laser_fit(volt_piezo, residuals, f'{folder}/figures/find_peaks/residuals_{title}.png',
                        A_list, x0_list, gamma_list, off_list, piezo_peaks, y_peaks, save=True)
 
 freq = [377108945610922.8, 377109126401922.8, 377109307192922.8,
