@@ -13,9 +13,9 @@ def transmission(x, slope, intercept, scale1, scale2, scale3, mean1, mean2, mean
                                              scale3 * np.exp(-(x - mean3)**2 / (2 * (sigma3**2)))))
 
 
-folder = 'data10'
+folder = 'datalinewidth'
 title = 'intensity00010'
-data_file = f'{folder}/clean_data/{title}.csv'
+data_file = f'{folder}/clean_data/raw/{title}.csv'
 
 data = pd.read_csv(data_file)
 
