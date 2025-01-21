@@ -13,9 +13,27 @@ def transmission(x, slope, intercept, scale1, scale2, scale3, mean1, mean2, mean
                                              scale3 * np.exp(-(x - mean3)**2 / (2 * (sigma3**2)))))
 
 
-folder = 'datalinewidth'
-title = 'intensity00010'
-data_file = f'{folder}/clean_data/raw/{title}.csv'
+#####################################################################################################
+# section with file specific values
+
+# use this to find peaks in intensity
+# folder = 'data_linewidth'
+# title = 'intensity00010'
+
+# use this to find peaks in modld files
+folder = 'data_temp'
+title = 'mod_LD00000'
+data_file = f'{folder}/clean_data/{title}.csv'
+
+min_height = 0.017
+min_distance = 200
+
+# other stuff you have to change in the rest of the file is:
+# - initial guesses and bounds for fit (lines 45-58)
+# - which peaks to remove (lines 88-99)
+
+#####################################################################################################
+
 
 data = pd.read_csv(data_file)
 
@@ -24,23 +42,23 @@ volt_laser = data['volt_laser'].to_numpy()
 volt_piezo = data['volt_piezo'].to_numpy()
 volt_ld = data['volt_ld'].to_numpy()
 
-lower_bounds = [-np.inf, -np.inf,
+lower_bounds = [-np.inf, 0,
                 0, 0, 0,
-                4.5, 7.5, 8.6,
+                4.3, 6.5, 7.5,
                 0, 0, 0]
 
 upper_bounds = [0, np.inf,
                 np.inf, np.inf, np.inf,
-                5.5, 8.5, 9.6,
+                6, 8, 9,
                 np.inf, np.inf, np.inf]
 
-p0 = [-0.029, 1,
-      0.63, 0.08, 0.25,
-      5, 7.9, 9.1,
+p0 = [-0.072, 1.796,
+      0.5, 0.07, 0.18,
+      5.1, 7.3, 8.2,
       1, 1, 1]
 
-popt, pcov = curve_fit(transmission, volt_piezo,
-                       volt_laser, p0=p0, bounds=(lower_bounds, upper_bounds), maxfev=10000)
+popt, pcov = curve_fit(transmission, volt_piezo[700:],
+                       volt_laser[700:], p0=p0, bounds=(lower_bounds, upper_bounds), maxfev=10000)
 
 print(popt)
 
@@ -62,20 +80,23 @@ plt.close()
 
 
 residuals = volt_laser - transmission(volt_piezo, *popt)
-peaks_indices, _ = find_peaks(residuals, height=0.01, distance=2000)
+peaks_indices, _ = find_peaks(
+    residuals, height=min_height, distance=min_distance)
 lor, cov = fp.fit_peaks_spectroscopy(
-    volt_piezo, residuals, height=0.01, distance=2000)
+    volt_piezo, residuals, height=min_height, distance=min_distance)
 
 # Correct peaks
-peaks_indices = np.delete(peaks_indices, [0, 4, 5, 6, 10])
+peaks_indices = np.delete(peaks_indices, [3, 4, 5, 6])
 
-lor.pop(8)
+lor.pop(6)
+lor.pop(5)
 lor.pop(4)
-lor.pop(0)
+lor.pop(3)
 
-cov.pop(8)
+cov.pop(6)
+cov.pop(5)
 cov.pop(4)
-cov.pop(0)
+cov.pop(3)
 
 piezo_peaks = np.array(volt_piezo[peaks_indices])
 timestamp = np.array(timestamp[peaks_indices])
@@ -114,10 +135,10 @@ doff = np.array(doff)
 print(x0_list)
 
 fn.plot_piezo_laser_fit(volt_piezo, residuals, f'{folder}/figures/find_peaks/residuals_{title}.png',
-                       A_list, x0_list, gamma_list, off_list, piezo_peaks, y_peaks, save=True)
+                        A_list, x0_list, gamma_list, off_list, piezo_peaks, y_peaks, save=True)
 
 freq = [377108945610922.8, 377109126401922.8, 377109307192922.8,
-        377111224766631.8, 377111633094631.8, 377112041422631.8]
+        377111224766631.8, 377112041422631.8]
 
 # Saving data in clean_data folder
 output_file = f'{folder}/clean_data/{title}_peaks.csv'
