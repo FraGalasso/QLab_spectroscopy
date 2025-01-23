@@ -13,6 +13,11 @@ def transmission(x, slope, intercept, scale1, scale2, scale3, mean1, mean2, mean
                                              scale3 * np.exp(-(x - mean3)**2 / (2 * (sigma3**2)))))
 
 
+def transmission_zoom(x, slope, intercept, scale1, scale2, mean1, mean2, sigma1, sigma2):
+    return (slope * x + intercept) * (np.exp(-scale1 * np.exp(-(x - mean1)**2 / (2 * (sigma1**2))) -
+                                             scale2 * np.exp(-(x - mean2)**2 / (2 * (sigma2**2)))))
+
+
 #####################################################################################################
 # section with file specific values
 
@@ -22,7 +27,7 @@ def transmission(x, slope, intercept, scale1, scale2, scale3, mean1, mean2, mean
 
 # use this to find peaks in modld files
 folder = 'data_temp'
-title = 'mod_LD00000'
+title = 'mod_LD00001'
 data_file = f'{folder}/clean_data/{title}.csv'
 
 min_height = 0.017
@@ -31,6 +36,9 @@ min_distance = 200
 # other stuff you have to change in the rest of the file is:
 # - initial guesses and bounds for fit (lines 45-58)
 # - which peaks to remove (lines 88-99)
+
+# for mod_LD00001 you have to use transition_zoom instead of transition
+# i'm commenting the different options as it would be quite heavy modifications
 
 #####################################################################################################
 
@@ -42,7 +50,7 @@ volt_laser = data['volt_laser'].to_numpy()
 volt_piezo = data['volt_piezo'].to_numpy()
 volt_ld = data['volt_ld'].to_numpy()
 
-lower_bounds = [-np.inf, 0,
+'''lower_bounds = [-np.inf, 0,
                 0, 0, 0,
                 4.3, 6.5, 7.5,
                 0, 0, 0]
@@ -63,11 +71,35 @@ popt, pcov = curve_fit(transmission, volt_piezo[700:],
 print(popt)
 
 vp = np.linspace(min(volt_piezo), max(volt_piezo), 500)
-fit = transmission(vp, *popt)
+fit = transmission(vp, *popt)'''
+
+# zoomed option
+lower_bounds = [-np.inf, 0,
+                0, 0,
+                6.5, 7.7,
+                0, 0]
+
+upper_bounds = [0, np.inf,
+                np.inf, np.inf,
+                8.2, 9.2,
+                np.inf, np.inf]
+
+p0 = [-0.059, 1.726,
+      0.06, 0.18,
+      7.4, 8.5,
+      1, 1]
+
+popt, pcov = curve_fit(transmission_zoom, volt_piezo[700:],
+                       volt_laser[700:], p0=p0, bounds=(lower_bounds, upper_bounds), maxfev=10000)
+
+print(popt)
+
+vp = np.linspace(min(volt_piezo[700:]), max(volt_piezo), 500)
+fit = transmission_zoom(vp, *popt)
 
 plt.figure()
-plt.plot(volt_piezo, volt_laser, label='Laser intensity',
-         color='blue', markersize=5, marker='.')
+plt.scatter(volt_piezo[700:], volt_laser[700:], label='Laser intensity',
+            color='blue', s=5, marker='.')
 plt.plot(vp, fit, label='Fit result',
          color='red', markersize=5, marker='')
 plt.xlabel('Volt Piezo [V]')
@@ -79,13 +111,14 @@ plt.savefig(f'{folder}/figures/find_peaks/first_fit{title}.png')
 plt.close()
 
 
-residuals = volt_laser - transmission(volt_piezo, *popt)
+# residuals = volt_laser - transmission(volt_piezo, *popt)
+residuals = volt_laser - transmission_zoom(volt_piezo, *popt)
 peaks_indices, _ = find_peaks(
     residuals, height=min_height, distance=min_distance)
 lor, cov = fp.fit_peaks_spectroscopy(
     volt_piezo, residuals, height=min_height, distance=min_distance)
 
-# Correct peaks
+'''# Correct peaks
 peaks_indices = np.delete(peaks_indices, [3, 4, 5, 6])
 
 lor.pop(6)
@@ -96,7 +129,7 @@ lor.pop(3)
 cov.pop(6)
 cov.pop(5)
 cov.pop(4)
-cov.pop(3)
+cov.pop(3)'''
 
 piezo_peaks = np.array(volt_piezo[peaks_indices])
 timestamp = np.array(timestamp[peaks_indices])
@@ -134,11 +167,13 @@ doff = np.array(doff)
 
 print(x0_list)
 
-fn.plot_piezo_laser_fit(volt_piezo, residuals, f'{folder}/figures/find_peaks/residuals_{title}.png',
+fn.plot_piezo_laser_fit(volt_piezo[1500:], residuals[1500:], f'{folder}/figures/find_peaks/residuals_{title}.png',
                         A_list, x0_list, gamma_list, off_list, piezo_peaks, y_peaks, save=True)
 
-freq = [377108945610922.8, 377109126401922.8, 377109307192922.8,
-        377111224766631.8, 377112041422631.8]
+'''freq = [377108945610922.8, 377109126401922.8, 377109307192922.8,
+        377111224766631.8, 377112041422631.8]'''
+
+freq = [377111224766631.8, 377112041422631.8]
 
 # Saving data in clean_data folder
 output_file = f'{folder}/clean_data/{title}_peaks.csv'
