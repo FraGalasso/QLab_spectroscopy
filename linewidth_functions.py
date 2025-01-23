@@ -153,8 +153,8 @@ def plot_ufloat_fit(x, y, model_func, x_label, y_label, title, beta0, file_name,
 
     # Plot the fitted curve
     params = uarray(fit_params, fit_param_errs)
-    fitstr = f'y = {params[0].nominal_value:.3g} ± {params[0].std_dev:.3g} * x + ' \
-         f'{params[1].nominal_value:.3g} ± {params[1].std_dev:.3g}'
+    fitstr = f'y = ({params[0].nominal_value:.3g} ± {params[0].std_dev:.3g}) * x + ' \
+         f'({params[1].nominal_value:.3g} ± {params[1].std_dev:.3g})'
     plt.plot(x_fit, y_fit, label=fitstr, color='blue', linestyle='--')
 
     # Plot formatting
