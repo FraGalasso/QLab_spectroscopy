@@ -52,7 +52,7 @@ x_min = (scaler.data_min_)[0]
 print(type(scale_factor), type(x_min))
 
 # guesses
-slope_guess = (photodiode[-1]-photodiode[0]) / (scaled_frequencies[-1]-scaled_frequencies[0])
+slope_guess = (photodiode[-1] - photodiode[0]) / (scaled_frequencies[-1] - scaled_frequencies[0])
 int_guess = photodiode[-1] - slope_guess * scaled_frequencies[0]
 lb_int = -0.8 * slope_guess * photodiode[-1]
 
@@ -84,7 +84,7 @@ f_sc = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 500)
 pd_fit = transmission_temp_scaled(f_sc, *popt)
 
 intercept_estimate = popt[1] - x_min / scale_factor * popt[0]
-intercept_estimate_error = np.sqrt(pcov[1, 1] + pcov[0,0] * (x_min / scale_factor)**2)
+intercept_estimate_error = np.sqrt(pcov[1, 1] + pcov[0, 0] * (x_min / scale_factor)**2)
 
 print(
     f'slope:\t\t{popt[0] / scale_factor} +/- {np.sqrt(pcov[0, 0]) / scale_factor} V/Hz')
