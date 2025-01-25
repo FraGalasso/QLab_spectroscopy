@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from sklearn.preprocessing import MinMaxScaler
+import os
 
 
 data = pd.read_csv('data_temp/clean_data/mod_LD00001_calibrated_cropped.csv')
@@ -18,13 +19,14 @@ term2 = kb / (c**2 * rb_mass)
 
 lower_mask = (2 + 3.7711e5) * 1e9
 upper_mask = (3.2 + 3.7711e5) * 1e9
-# lower_mask = f_peaks[1]
-# upper_mask = max(frequencies)
 
 calib_correction = np.array([75, 251]) * 1e6
 
 scale1_guess = 1.21
 scale2_guess = 3.22
+
+os.makedirs('data_temp/figures/temperature', exist_ok=True)
+figure_name = f'temp_fit_{lower_mask/1e9-3.7711e5:.2g}_{upper_mask/1e9-3.7711e5:.2g}.png'
 
 #####################################################################################################
 
@@ -92,6 +94,7 @@ print(f'scale1:\t\t{popt[2]} +/- {np.sqrt(pcov[2, 2])} K^0.5')
 print(f'scale2:\t\t{popt[3]} +/- {np.sqrt(pcov[3, 3])} K^0.5')
 print(f'temperature:\t{popt[4]} +/- {np.sqrt(pcov[4, 4])} K')
 
+title = f'Fitting region: ({lower_mask/1e9-3.7711e5:.2g} - {upper_mask/1e9-3.7711e5:.2g} GHz) + 377.11 THz'
 
 plt.figure()
 plt.scatter(frequencies, photodiode, label='Data',
@@ -104,9 +107,9 @@ plt.axvline(lower_mask, color='green')
 plt.axvline(upper_mask, color='green')
 plt.xlabel('Frequencies [Hz]')
 plt.ylabel('Photodiode readings [V]')
-plt.title('')
+plt.title(title)
 plt.grid()
 plt.legend()
 plt.tight_layout()
-# plt.savefig('data9/figures/temperature/temp_fit_shoulder.pdf')
+plt.savefig(f'data_temp/figures/temperature/{figure_name}')
 plt.show()
