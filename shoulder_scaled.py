@@ -6,7 +6,7 @@ from sklearn.preprocessing import MinMaxScaler
 import os
 
 
-data = pd.read_csv('data_temp/clean_data/mod_LD00001_calibrated_cropped.csv')
+data = pd.read_csv('data_temp/clean_data/mod_LD00001_calibrated_cropped_2.csv')
 peaks = pd.read_csv('data_temp/clean_data/mod_LD00001_peaks.csv')
 
 #####################################################################################################
@@ -17,23 +17,23 @@ rb_mass = 1.67e-27 * 87   # kg
 c = 3e8
 term2 = kb / (c**2 * rb_mass)
 
-lower_mask = (2 + 3.7711e5) * 1e9
+lower_mask = (2.2 + 3.7711e5) * 1e9
 upper_mask = (2.7 + 3.7711e5) * 1e9
 
-calib_correction = np.array([75, 251]) * 1e6
+# calib_correction = np.array([75, 251]) * 1e6
 
 scale1_guess = 1.35
 scale2_guess = 4
 
 os.makedirs('data_temp/figures/temperature', exist_ok=True)
-figure_name = f'temp_fit_{lower_mask/1e9-3.7711e5:.2g}_{upper_mask/1e9-3.7711e5:.2g}.png'
+figure_name = f'new_calib_temp_fit_{lower_mask/1e9-3.7711e5:.2g}_{upper_mask/1e9-3.7711e5:.2g}.png'
 
 #####################################################################################################
 
 frequencies = data['frequencies'].to_numpy()
 photodiode = data['volt_laser'].to_numpy()
 # theorical peaks, with correction for calibration
-f_peaks = peaks['freq'] + calib_correction
+f_peaks = peaks['freq'] 
 
 frequencies = frequencies[1200:]
 photodiode = photodiode[1200:]
@@ -49,7 +49,6 @@ scaled_frequencies = fs.flatten()
 # relevant scaling parameters
 scale_factor = (scaler.data_max_ - scaler.data_min_)[0]
 x_min = (scaler.data_min_)[0]
-print(type(scale_factor), type(x_min))
 
 # guesses
 slope_guess = (photodiode[-1] - photodiode[0]) / \

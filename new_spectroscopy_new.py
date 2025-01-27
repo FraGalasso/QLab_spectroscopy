@@ -47,7 +47,7 @@ if len(data) != len(frequencies):
 data['frequencies'] = frequencies
 base, ext = os.path.splitext(filename)
 new_filename_calib = f"{base}_calibrated_2{ext}"
-new_filename_crop = f"{base}_calibrated_cropped{ext}_2"
+new_filename_crop = f"{base}_calibrated_cropped_2{ext}"
 data.to_csv(new_filename_calib, index=False)
 
 gamma_factor = 2.5
