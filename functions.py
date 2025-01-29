@@ -152,3 +152,25 @@ def plot_fits(x, y, x_label, y_label, file_name, title=None, save=False):
     else:
         plt.show()
     return coeffs_1, coeffs_2, d_coeffs_1, d_coeffs_2
+
+
+def fit_residuals(func, x, y, params, x_label, y_label, title, file_name, save):
+    res = y - func(x, *params)
+    scattering(x, res, x_label, y_label, title, file_name, save)
+
+
+def scattering(x, y, x_label, y_label, title, file_name, save):
+    plt.figure(figsize=(12, 6))
+    plt.scatter(x, y, label='Data', color='green')
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.grid()
+    plt.tight_layout()
+    if save:
+        plt.savefig(file_name)
+        plt.close()
+    else:
+        plt.show()

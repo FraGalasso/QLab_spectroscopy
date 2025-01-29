@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 from scipy.optimize import curve_fit
 from sklearn.preprocessing import MinMaxScaler
 import os
+from functions import fit_residuals
 
 
 data = pd.read_csv('data_temp/clean_data/mod_LD00001_calibrated_cropped_2.csv')
@@ -17,8 +18,8 @@ rb_mass = 1.67e-27 * 87   # kg
 c = 3e8
 term2 = kb / (c**2 * rb_mass)
 
-lower_mask = (0.8 + 3.7711e5) * 1e9
-upper_mask = (2.7 + 3.7711e5) * 1e9
+lower_mask = (2.2 + 3.7711e5) * 1e9
+upper_mask = (2.9 + 3.7711e5) * 1e9
 
 # calib_correction = np.array([75, 251]) * 1e6
 
@@ -26,6 +27,7 @@ scale1_guess = 1.35
 scale2_guess = 4
 
 os.makedirs('data_temp/figures/temperature', exist_ok=True)
+os.makedirs('data_temp/figures/temperature/residuals', exist_ok=True)
 figure_name = f'new_calib_temp_fit_{lower_mask/1e9-3.7711e5:.2g}_{upper_mask/1e9-3.7711e5:.2g}.png'
 
 #####################################################################################################
@@ -33,7 +35,7 @@ figure_name = f'new_calib_temp_fit_{lower_mask/1e9-3.7711e5:.2g}_{upper_mask/1e9
 frequencies = data['frequencies'].to_numpy()
 photodiode = data['volt_laser'].to_numpy()
 # theorical peaks, with correction for calibration
-f_peaks = peaks['freq'] 
+f_peaks = peaks['freq']
 
 frequencies = frequencies[1200:]
 photodiode = photodiode[1200:]
@@ -114,3 +116,6 @@ plt.legend()
 plt.tight_layout()
 plt.savefig(f'data_temp/figures/temperature/{figure_name}')
 plt.show()
+
+fit_residuals(func=transmission_temp_scaled, x=restricted_freq_scaled, y=restricted_pd, params=popt,
+              x_label='Frequencies [Hz]', y_label='Residuals [V]', title='', file_name=f'data_temp/figures/temperature/residuals/{figure_name}', save=True)
