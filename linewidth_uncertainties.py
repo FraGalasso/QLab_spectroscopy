@@ -70,7 +70,7 @@ peaks_freqs = peaks['freq'].to_numpy()
 guesses = [1, 1]
 
 coeff1, __ = lfn.plot_ufloat_fit(peaks_mean, peaks_freqs, lfn.lin_model, 'peaks_piezovolt', 'freq',
-                                 'Fixed diode current, modulated piezo position: time calib', guesses, os.path.join(figure_folder, "calibration.pdf"), save)
+                                 'Fixed diode current, modulated piezo position: time calib', guesses, os.path.join(figure_folder, "calibration.png"), save)
 
 # create storage arrays
 peaks_22 = []
@@ -115,7 +115,7 @@ for i, (file_name, file_path, file_peak) in enumerate(zip(file_names, file_paths
 
     if plotting_spec:
         figure_path = os.path.join(
-            figure_folder, f"{powers[i]:.3g}_{file_name}.pdf")
+            figure_folder, f"{powers[i]:.3g}_{file_name}.png")
         spec_data = data['photodiode'].to_numpy()
         frequencies = lfn.calibrate(data['volt_piezo'], coeff1)
         lfn.plot_ufloat(
@@ -129,14 +129,14 @@ for i, (file_name, file_path, file_peak) in enumerate(zip(file_names, file_paths
         )
 
 # names for the figures
-figure_name = os.path.join(figure_folder, 'linewidths.pdf')
-figure_22 = os.path.join(figure_folder, 'linewidths22.pdf')
-figure_cross85 = os.path.join(figure_folder, 'linewidthscross85.pdf')
-figure_23 = os.path.join(figure_folder, 'linewidths23.pdf')
+figure_name = os.path.join(figure_folder, 'linewidths.png')
+figure_22 = os.path.join(figure_folder, 'linewidths22.png')
+figure_cross85 = os.path.join(figure_folder, 'linewidthscross85.png')
+figure_23 = os.path.join(figure_folder, 'linewidths23.png')
 
-figure_11 = os.path.join(figure_folder, 'linewidths11.pdf')
-figure_cross87 = os.path.join(figure_folder, 'linewidthscross87.pdf')
-figure_12 = os.path.join(figure_folder, 'linewidths12.pdf')
+figure_11 = os.path.join(figure_folder, 'linewidths11.png')
+figure_cross87 = os.path.join(figure_folder, 'linewidthscross87.png')
+figure_12 = os.path.join(figure_folder, 'linewidths12.png')
 
 x_label = r'$\Gamma \cdot \sqrt{ 1 + \left( \frac{I}{I_{\text{sat}}} \right) }$'
 y_label = r'$\text{Linewidth [MHz]}$'
