@@ -17,7 +17,7 @@ rb_mass = 1.67e-27 * 87   # kg
 c = 3e8
 term2 = kb / (c**2 * rb_mass)
 
-lower_mask = (2.2 + 3.7711e5) * 1e9
+lower_mask = (0.8 + 3.7711e5) * 1e9
 upper_mask = (2.7 + 3.7711e5) * 1e9
 
 # calib_correction = np.array([75, 251]) * 1e6
@@ -82,7 +82,6 @@ popt, pcov = curve_fit(transmission_temp_scaled, xdata=restricted_freq_scaled,
 f = np.linspace(min(frequencies), max(frequencies), 500)
 f_sc = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 500)
 pd_fit = transmission_temp_scaled(f_sc, *popt)
-pd_expected = transmission_temp_scaled(f_sc, *p0)
 
 intercept_estimate = popt[1] - x_min / scale_factor * popt[0]
 intercept_estimate_error = np.sqrt(
@@ -103,8 +102,6 @@ plt.scatter(frequencies, photodiode, label='Data',
             color='blue', s=5, marker='.')
 plt.plot(f, pd_fit, label=f'Fit result, T$={popt[4]:.1f}\\pm{np.sqrt(pcov[4, 4]):.1f}$K',
          color='red', linewidth=2)
-plt.plot(f, pd_expected, label='Expected behaviour',
-         color='purple', linewidth=2)
 plt.axvline(f_peaks[0], color='black')
 plt.axvline(f_peaks[1], color='black')
 plt.axvline(lower_mask, color='green')
