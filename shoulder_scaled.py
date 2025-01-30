@@ -18,8 +18,8 @@ rb_mass = 1.67e-27 * 87   # kg
 c = 3e8
 term2 = kb / (c**2 * rb_mass)
 
-lower_mask = (2.2 + 3.7711e5) * 1e9
-upper_mask = (2.9 + 3.7711e5) * 1e9
+lower_mask = (0.8 + 3.7711e5) * 1e9
+upper_mask = (3.1 + 3.7711e5) * 1e9
 
 # calib_correction = np.array([75, 251]) * 1e6
 

@@ -90,7 +90,7 @@ dT_list_up = []
 bound_list_up = (np.arange(2.6, 3.3, 0.1) + 3.7711e5) * 1e9
 
 for ub in bound_list_up:
-    lower_mask = f_peaks[1]
+    lower_mask = (1.8 + 3.7711e5) * 1e9
     upper_mask = ub
 
     mask = (scaled_frequencies >= ((lower_mask - x_min) / scale_factor)) & (
@@ -120,8 +120,8 @@ plt.figure()
 plt.errorbar(x=bound_list_up, y=T_list_up, yerr=dT_list_up, fmt='.', color='blue', ls='')
 plt.xlabel('Upper bound [Hz]')
 plt.ylabel('T [K]')
-plt.title('Estimated temperature with lower bound at second transition')
+plt.title('Estimated temperature with lower bound at (1.8 + 3.7711e5) GHz')
 plt.grid()
 plt.tight_layout()
-plt.savefig(f'data_temp/figures/temperature/upper_bound_sweep_2.png')
+plt.savefig(f'data_temp/figures/temperature/upper_bound_sweep_3.png')
 plt.close()
