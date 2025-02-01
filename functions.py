@@ -174,3 +174,19 @@ def scattering(x, y, x_label, y_label, title, file_name, save):
         plt.close()
     else:
         plt.show()
+
+def plotting3(x, y1, y2, y3, x_label, y1_label, y2_label, y3_label, title, file_name, save):
+    plt.figure(figsize=(12, 6))
+    plt.plot(x, y1, label=y1_label, color='green')
+    plt.plot(x, y2, label=y2_label, color='blue')
+    plt.plot(x, y3, label=y3_label, color='red')
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    if save:
+        plt.savefig(file_name)
+        plt.close()
+    else:
+        plt.show()

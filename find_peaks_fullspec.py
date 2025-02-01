@@ -2,8 +2,10 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
 from scipy.optimize import curve_fit
-from scipy.signal import find_peaks
+from scipy.signal import find_peaks, peak_widths
+import fit_peaks as fp
 import os
+import functions as fn
 
 folder = 'data_temp_2'
 title = 'fullspec00000'
@@ -37,7 +39,6 @@ param_bounds = ([-np.inf, -np.inf, -np.inf, -np.inf, -4.33, 0, -np.inf, -1.81, 0
 
 popt, pcov = curve_fit(doppler_envelope, piezo_restricted,
                        laser_restricted, bounds=param_bounds)
-print(popt)
 
 vp = np.linspace(-4.5, max(volt_piezo), 500)
 fit = doppler_envelope(vp, *popt)
@@ -56,36 +57,61 @@ plt.tight_layout()
 plt.savefig(f'{folder}/figures/finding_peaks/{title}_fit.png')
 
 
-just_peaks = laser_restricted - doppler_envelope(piezo_restricted, *popt)
-peaks_indices, _ = find_peaks(just_peaks, prominence=[0.015, 0.3], distance=50)
-
+residuals = laser_restricted - doppler_envelope(piezo_restricted, *popt)
+peaks_indices, _ = find_peaks(residuals, prominence=[0.015, 0.3], distance=50)
 peaks_indices = np.array(peaks_indices)
-# Correct peaks
 
 indices = [0, 1, 2, 4, 5, 6, 8, 9, 10, 13, 15]
 peaks_indices = peaks_indices[indices]
 
-timestamp_peaks = np.array(time_restricted[peaks_indices])
 piezo_peaks = np.array(piezo_restricted[peaks_indices])
+timestamp_peaks = np.array(time_restricted[peaks_indices])
 laser_peaks = np.array(laser_restricted[peaks_indices])
 ld_peaks = np.array(ld_restricted[peaks_indices])
-y_peaks = np.array(just_peaks[peaks_indices])
+y_peaks = np.array(residuals[peaks_indices])
 
-print(piezo_peaks)
+widths_indices = peak_widths(residuals, peaks_indices)[0]
+piezo_spacing = np.mean(np.diff(piezo_restricted))
+widths = widths_indices * piezo_spacing
 
-plt.figure()
-plt.plot(piezo_restricted, just_peaks, label='Peaks without doppler',
-         color='blue', markersize=3, linewidth=2, marker='.')
-plt.scatter(piezo_peaks, y_peaks, label='Peaks',
-            color='red', s=20, marker='x')
-plt.xlabel('Volt Piezo [V]')
-plt.ylabel('Laser peaks [V]')
-plt.title(f'Residuals {title}')
-plt.grid()
-plt.legend()
-plt.tight_layout()
-plt.savefig(f'{folder}/figures/finding_peaks/{title}_residuals.png')
-plt.show()
+ind_range = 200
+lor, cov = fp.fit_peaks_leonardi(piezo_restricted, residuals, piezo_peaks, widths, ind_range)
+
+x0_list = []
+A_list = []
+gamma_list = []
+off_list = []
+dA = []
+dx0 = []
+dgamma = []
+doff = []
+
+indices = [np.flatnonzero(piezo_restricted == pk)[0]
+           for pk in piezo_peaks if pk in piezo_restricted]
+
+for popt, pcov, i in zip(lor, cov, indices):
+    A_list.append(popt[0])
+    x0_list.append(popt[1])
+    gamma_list.append(popt[2])
+    off_list.append(popt[3])
+    dA.append(np.sqrt(pcov[0, 0]))
+    dx0.append(np.sqrt(pcov[1, 1]))
+    dgamma.append(np.sqrt(pcov[2, 2]))
+    doff.append(np.sqrt(pcov[3, 3]))
+    fn.fit_residuals(fp.lorentzian_off, piezo_restricted[i-ind_range//2:i+ind_range//2], residuals[i-ind_range//2:i+ind_range//2], popt, 'Volt piezo [V]',
+                     'Laser intensity [V]', f'Residuals for peak in {piezo_restricted[i]:.3g} V', f'{folder}/figures/finding_peaks/residuals_{piezo_restricted[i]:.3g}.png', True)
+
+x0_list = np.array(x0_list)
+A_list = np.array(A_list)
+gamma_list = np.array(gamma_list)
+off_list = np.array(off_list)
+dA = np.array(dA)
+dx0 = np.array(dx0)
+dgamma = np.array(dgamma)
+doff = np.array(doff)
+
+fp.plot_piezo_laser_fit_leonardi(piezo_restricted, residuals, file_name=f'{folder}/figures/finding_peaks/fitting_peaks.png', A=A_list,
+                                 x0=x0_list, gamma=gamma_list, off=off_list, xpeaks=piezo_peaks, ypeaks=y_peaks, ind_range=ind_range, save=True)
 
 freq = [377104390084020.94, 377104798412020.94, 377105206740020.94, 377105909878483.7, 377106090669483.7, 377106271460483.7,
         377108945610922.8, 377109126401922.8, 377109307192922.8, 377111224766631.8, 377112041422631.8]
@@ -99,6 +125,14 @@ df['pd_peaks'] = laser_peaks
 df['piezo_peaks'] = piezo_peaks
 df['ld_peaks'] = ld_peaks
 df['freq'] = freq
+df['lor_A'] = A_list
+df['lor_mean'] = x0_list
+df['lor_gamma'] = gamma_list
+df['lor_off'] = off_list
+df['lor_d_A'] = dA
+df['lor_d_mean'] = dx0
+df['lor_d_gamma'] = dgamma
+df['lor_d_off'] = doff
 
 df.to_csv(output_file, index=False)
 print(f"Data saved to {output_file}")
@@ -109,5 +143,5 @@ data_new['volt_laser'] = laser_restricted
 data_new['volt_piezo'] = piezo_restricted
 data_new['volt_ld'] = ld_restricted
 
-df.to_csv(f'{folder}/clean_data/{title}_new.csv', index=False)
+data_new.to_csv(f'{folder}/clean_data/{title}_new.csv', index=False)
 print(f"Data saved to {folder}/clean_data/{title}_new.csv")
