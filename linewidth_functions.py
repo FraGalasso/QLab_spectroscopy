@@ -147,14 +147,18 @@ def plot_ufloat_fit(x, y, model_func, x_label, y_label, title, beta0, file_name,
 
     # Create the plot
     plt.figure(figsize=(12, 6))
-
+    plt.rcParams.update({'font.size': 16})
     # Plot data with error bars
-    plt.errorbar(x_nom, y_nom, xerr=x_err, yerr=y_err, fmt='x', color='green', label='Data', capsize=3)
+    plt.errorbar(x_nom, y_nom, xerr=x_err, yerr=y_err, fmt='.', color='green', label='Data', capsize=5)
 
     # Plot the fitted curve
     params = uarray(fit_params, fit_param_errs)
-    fitstr = f'y = ({params[0].nominal_value:.3g} ± {params[0].std_dev:.3g}) * x + ' \
-         f'({params[1].nominal_value:.3g} ± {params[1].std_dev:.3g})'
+    if len(params) == 2:
+        fitstr = f'y = ({params[0].nominal_value:.3g} ± {params[0].std_dev:.3g}) * x + ' \
+            f'({params[1].nominal_value:.3g} ± {params[1].std_dev:.3g})'
+    elif len(params) == 3:
+        fitstr = f'y = ({params[0].nominal_value:.3g} ± {params[0].std_dev:.3g}) $x^2$ + ' \
+            f'({params[1].nominal_value:.3g} ± {params[1].std_dev:.3g}) x + ({params[2].nominal_value:.3g} ± {params[2].std_dev:.3g}) x'
     plt.plot(x_fit, y_fit, label=fitstr, color='blue', linestyle='--')
 
     # Plot formatting

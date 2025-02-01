@@ -118,17 +118,17 @@ def plot_piezo_laser_fit_leonardi(piezo_fitted, volt_laser, file_name, A, x0, ga
     colors = cmap(np.linspace(0.5, 0.9, len(fitted_curves)))
 
     plt.figure(figsize=(12, 6))
+    plt.rcParams.update({'font.size': 16})
     plt.scatter(piezo_fitted, volt_laser, label='Laser Intensity vs. Piezo volt',
                 color='green', marker='.')
     plt.scatter(xpeaks, ypeaks, marker='x', label='Peak Values')
     for i, (x, y) in enumerate(fitted_curves):
         plt.plot(x, y, '--', label=f'Fitted Lorentzian {i+1}', color=colors[i])
     plt.xlabel('Voltage Piezo (V)')
-    plt.ylabel('Laser Intensity (V)')
+    plt.ylabel('Residuals (V)')
     if log:
         plt.yscale('log')
-    plt.title('Piezo Voltage vs Laser Voltage')
-    #plt.legend()
+    # plt.legend()
     plt.grid()
     plt.xticks(rotation=45)
     plt.tight_layout()

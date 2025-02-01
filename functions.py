@@ -161,6 +161,7 @@ def fit_residuals(func, x, y, params, x_label, y_label, title, file_name, save):
 
 def scattering(x, y, x_label, y_label, title, file_name, save):
     plt.figure(figsize=(12, 6))
+    plt.rcParams.update({'font.size': 16})
     plt.scatter(x, y, label='Data', color='green')
     plt.title(title)
     plt.xlabel(x_label)
@@ -175,8 +176,27 @@ def scattering(x, y, x_label, y_label, title, file_name, save):
     else:
         plt.show()
 
+
+def plotting(x, y, x_label, y_label, title, file_name, save):
+    plt.figure(figsize=(12, 6))
+    plt.rcParams.update({'font.size': 16})
+    plt.plot(x, y, label='Data', color='green')
+    plt.title(title)
+    plt.xlabel(x_label)
+    plt.ylabel(y_label)
+    plt.legend()
+    plt.grid()
+    plt.tight_layout()
+    if save:
+        plt.savefig(file_name)
+        plt.close()
+    else:
+        plt.show()
+
+
 def plotting3(x, y1, y2, y3, x_label, y1_label, y2_label, y3_label, title, file_name, save):
     plt.figure(figsize=(12, 6))
+    plt.rcParams.update({'font.size': 16})
     plt.plot(x, y1, label=y1_label, color='green')
     plt.plot(x, y2, label=y2_label, color='blue')
     plt.plot(x, y3, label=y3_label, color='red')
@@ -190,3 +210,20 @@ def plotting3(x, y1, y2, y3, x_label, y1_label, y2_label, y3_label, title, file_
         plt.close()
     else:
         plt.show()
+
+
+def remove_peaks2(peaks_mean, peaks_gamma, data, gamma_factor):
+    '''
+    Removes regions around peaks in peaks_mean from "data",
+    where the region is defined by gamma_factor * gamma around each peak.
+    '''
+    new_data = data.copy()
+
+    for mean, gamma in zip(peaks_mean, peaks_gamma):
+        begin_volt = mean - gamma_factor * gamma
+        end_volt = mean + gamma_factor * gamma
+        # Apply the filtering
+        new_data = new_data[(new_data['volt_piezo'] < begin_volt) | (
+            new_data['volt_piezo'] > end_volt)]
+
+    return new_data

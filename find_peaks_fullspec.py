@@ -44,13 +44,13 @@ vp = np.linspace(-4.5, max(volt_piezo), 500)
 fit = doppler_envelope(vp, *popt)
 
 plt.figure()
+plt.rcParams.update({'font.size': 16})
 plt.plot(piezo_restricted, laser_restricted, label='Laser intensity',
          color='blue', markersize=5, marker='.')
 plt.plot(vp, fit, label='Fit result',
          color='red', markersize=5, marker='')
 plt.xlabel('Volt Piezo [V]')
 plt.ylabel('Volt Laser [V]')
-plt.title(f'Fitting {title}')
 plt.grid()
 plt.legend()
 plt.tight_layout()
