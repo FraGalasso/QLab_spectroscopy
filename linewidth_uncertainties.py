@@ -141,16 +141,90 @@ figure_12 = os.path.join(figure_folder, 'linewidths12.png')
 x_label = r'$\Gamma \cdot \sqrt{ 1 + \left( \frac{I}{I_{\text{sat}}} \right) }$'
 y_label = r'$\text{Linewidth [MHz]}$'
 
-__, __ = lfn.plot_ufloat_fit(int85_x, peaks_22, lfn.lin_model, x_label, y_label,
+coeff22, dcoeff22 = lfn.plot_ufloat_fit(int85_x, peaks_22, lfn.lin_model, x_label, y_label,
                              r'Peak 2-2 $\text{Rb}_{85}$', guesses, figure_22, save)
-__, __ = lfn.plot_ufloat_fit(intcross85_x, peaks_cross85, lfn.lin_model, x_label, y_label,
+coeffcross85, dcoeffcross85 = lfn.plot_ufloat_fit(intcross85_x, peaks_cross85, lfn.lin_model, x_label, y_label,
                              r'Crosspeak $\text{Rb}_{85}$', guesses, figure_cross85, save)
-__, __ = lfn.plot_ufloat_fit(int85_x, peaks_23, lfn.lin_model, x_label, y_label,
+coeff23, dcoeff23 = lfn.plot_ufloat_fit(int85_x, peaks_23, lfn.lin_model, x_label, y_label,
                              r'Peak 2-3 $\text{Rb}_{85}$', guesses, figure_23, save)
 
-__, __ = lfn.plot_ufloat_fit(int87_x, peaks_11, lfn.lin_model, x_label, y_label,
+coeff11, dcoeff11 = lfn.plot_ufloat_fit(int87_x, peaks_11, lfn.lin_model, x_label, y_label,
                              r'Peak 1-1 $\text{Rb}_{87}$', guesses, figure_11, save)
-__, __ = lfn.plot_ufloat_fit(intcross87_x, peaks_cross87, lfn.lin_model, x_label, y_label,
+coeffcross87, dcoeffcross87 = lfn.plot_ufloat_fit(intcross87_x, peaks_cross87, lfn.lin_model, x_label, y_label,
                              r'Crosspeak $\text{Rb}_{87}$', guesses, figure_cross87, save)
-__, __ = lfn.plot_ufloat_fit(int87_x, peaks_12, lfn.lin_model, x_label, y_label,
+coeff12, dcoeff12 = lfn.plot_ufloat_fit(int87_x, peaks_12, lfn.lin_model, x_label, y_label,
                              r'Peak 1-2 $\text{Rb}_{87}$', guesses, figure_12, save)
+
+plt.figure(figsize=(12, 10))
+plt.rcParams.update({'font.size': 16})
+plt.errorbar(nominal_values(int87_x), nominal_values(peaks_11), xerr=std_devs(int87_x), yerr=std_devs(peaks_11), fmt='.', color='green', label=f'F=1$\\to$F\'=1 - ({coeff11[1]:.3g} ± {dcoeff11[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(int87_x), nominal_values(peaks_12), xerr=std_devs(int87_x), yerr=std_devs(peaks_12), fmt='.', color='blue', label=f'F=1$\\to$F\'=2 - ({coeff12[1]:.3g} ± {dcoeff12[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(intcross87_x), nominal_values(peaks_cross87), xerr=std_devs(intcross87_x), yerr=std_devs(peaks_cross87), fmt='.', color='red', label=f'Crosspeak - ({coeffcross87[1]:.3g} ± {dcoeffcross85[1]:.3g}) V', capsize=5)
+
+fitstr11 = f'y = ({coeff11[0]:.3g} ± {dcoeff11[0]:.3g}) * x'
+fitstr12 = f'y = ({coeff12[0]:.3g} ± {dcoeff12[0]:.3g}) * x'
+fitstrcross87 = f'y = ({coeffcross87[0]:.3g} ± {dcoeffcross87[0]:.3g}) * x'
+        
+x_fit = np.linspace(min(nominal_values(int87_x)), max(nominal_values(int87_x)), 100)
+y_fit11 = lfn.lin_model(coeff11, x_fit)
+y_fit12 = lfn.lin_model(coeff12, x_fit)
+y_fitcross87 = lfn.lin_model(coeffcross87, x_fit)
+plt.plot(x_fit, y_fit11, label=fitstr11, color='green', linestyle='--')
+plt.plot(x_fit, y_fit12, label=fitstr12, color='blue', linestyle='--')
+plt.plot(x_fit, y_fitcross87, label=fitstrcross87, color='red', linestyle='--')
+
+plt.title(r'$^{87}$Rb power')
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+
+handles, labels = plt.gca().get_legend_handles_labels()
+
+plt.xticks(rotation=45)
+plt.grid()
+plt.tight_layout()
+plt.savefig('data_linewidth/figures_unc/rb87_1.png')
+plt.show()
+
+fig_legend = plt.figure(figsize=(3, 2))
+ax = fig_legend.add_subplot(111)
+ax.axis('off')
+legend = ax.legend(handles, labels, loc='center', fontsize=10, frameon=False)  
+
+fig_legend.savefig('data_linewidth/figures_unc/legend_87.png', bbox_inches='tight', dpi=300)
+
+plt.figure(figsize=(12, 10))
+plt.rcParams.update({'font.size': 16})
+plt.errorbar(nominal_values(int85_x), nominal_values(peaks_22), xerr=std_devs(int85_x), yerr=std_devs(peaks_22), fmt='.', color='green', label=f'F=2$\\to$F\'=2 - ({coeff22[1]:.3g} ± {dcoeff22[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(int85_x), nominal_values(peaks_23), xerr=std_devs(int85_x), yerr=std_devs(peaks_23), fmt='.', color='blue', label=f'F=2$\\to$F\'=3 - ({coeff23[1]:.3g} ± {dcoeff23[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(intcross85_x), nominal_values(peaks_cross85), xerr=std_devs(intcross85_x), yerr=std_devs(peaks_cross85), fmt='.', color='red', label=f'Crosspeak - ({coeffcross85[1]:.3g} ± {dcoeffcross85[1]:.3g}) V', capsize=5)
+
+fitstr22 = f'y = ({coeff22[0]:.3g} ± {dcoeff22[0]:.3g}) * x'
+fitstr23 = f'y = ({coeff23[0]:.3g} ± {dcoeff23[0]:.3g}) * x'
+fitstrcross85 = f'y = ({coeffcross85[0]:.3g} ± {dcoeffcross85[0]:.3g}) * x'
+        
+x_fit = np.linspace(min(nominal_values(int85_x)), max(nominal_values(int85_x)), 100)
+y_fit22 = lfn.lin_model(coeff22, x_fit)
+y_fit23 = lfn.lin_model(coeff23, x_fit)
+y_fitcross85 = lfn.lin_model(coeffcross85, x_fit)
+plt.plot(x_fit, y_fit22, label=fitstr22, color='green', linestyle='--')
+plt.plot(x_fit, y_fit23, label=fitstr23, color='blue', linestyle='--')
+plt.plot(x_fit, y_fitcross85, label=fitstrcross85, color='red', linestyle='--')
+
+plt.title(r'$^{85}$Rb power')
+plt.xlabel(x_label)
+plt.ylabel(y_label)
+
+handles, labels = plt.gca().get_legend_handles_labels()
+
+plt.xticks(rotation=45)
+plt.grid()
+plt.tight_layout()
+plt.savefig('data_linewidth/figures_unc/rb85_1.png')
+plt.show()
+
+fig_legend = plt.figure(figsize=(3, 2))
+ax = fig_legend.add_subplot(111)
+ax.axis('off')
+legend = ax.legend(handles, labels, loc='center', fontsize=10, frameon=False)  
+
+fig_legend.savefig('data_linewidth/figures_unc/legend_85.png', bbox_inches='tight', dpi=300)
