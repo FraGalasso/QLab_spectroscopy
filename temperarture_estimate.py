@@ -23,9 +23,9 @@ term2 = kb / (c**2 * rb_mass)
 lin_fit_lb = (7.1 + 3.7710e5) * 1e9
 lin_fit_ub = (8.15 + 3.7710e5) * 1e9
 region_3_lb = (0.3 + 3.7711e5) * 1e9
-region_3_ub = (3 + 3.7711e5) * 1e9
+region_3_ub = (2.3 + 3.7711e5) * 1e9
 region_2_lb = (1.8 + 3.7711e5) * 1e9
-region_2_ub = (2.8 + 3.7711e5) * 1e9
+region_2_ub = (2.3 + 3.7711e5) * 1e9
 region_1_lb = (0.8 + 3.7711e5) * 1e9
 region_1_ub = (1.6 + 3.7711e5) * 1e9
 
@@ -216,6 +216,8 @@ restricted_pd = photodiode[mask]
 
 popt, pcov = curve_fit(transmission_temp_scaled_region_1, xdata=restricted_freq_scaled,
                        ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
+fixed_scale1 = popt[0]
+
 
 f = np.linspace(min(frequencies), max(frequencies), 500)
 f_sc = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 500)
@@ -246,5 +248,54 @@ plt.tight_layout()
 plt.savefig('data_temp_2/figures/temperature/region_1.png')
 plt.show()
 
-fit_residuals(func=transmission_temp_scaled_region_2, x=restricted_freq_scaled, y=restricted_pd, params=popt,
+fit_residuals(func=transmission_temp_scaled_region_1, x=restricted_freq_scaled, y=restricted_pd, params=popt,
               x_label='Frequencies [Hz]', y_label='Residuals [V]', title='', file_name=f'data_temp_2/figures/temperature/residuals/resid_1.png', save=True)
+
+
+def transmission_temp_scaled_only_temp(
+    x, temp): return transmission_temp_scaled(x, fixed_scale1, fixed_scale2, temp)
+
+
+lower_bounds = [273]
+upper_bounds = [1000]
+p0 = [330]
+
+# restricting region of fit
+mask = (scaled_frequencies >= ((region_3_lb - x_min) / scale_factor)) & (
+    scaled_frequencies <= ((region_3_ub - x_min) / scale_factor))
+restricted_freq_scaled = scaled_frequencies[mask]
+restricted_pd = photodiode[mask]
+
+popt, pcov = curve_fit(transmission_temp_scaled_only_temp, xdata=restricted_freq_scaled,
+                       ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
+
+f = np.linspace(min(frequencies), max(frequencies), 500)
+f_sc = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 500)
+pd_fit = transmission_temp_scaled_only_temp(f_sc, *popt)
+
+print('Fitting region 3, only with temperature:')
+print(f'temperature:\t{popt[0]} +/- {np.sqrt(pcov[0, 0])} K\n')
+
+title = f'Fitting region: ({region_3_lb/1e9-3.7711e5:.2g} - {region_3_ub/1e9-3.7711e5:.2g} GHz) + 377.11 THz'
+
+plt.figure()
+plt.rcParams.update({'font.size': 10})
+plt.scatter(frequencies, photodiode, label='Data',
+            color='blue', s=5, marker='.')
+plt.plot(f, pd_fit, label=f'Fit result, T$={popt[0]:.1f}\\pm{np.sqrt(pcov[0, 0]):.1f}$K',
+         color='red', linewidth=2)
+plt.axvline(f_peaks[-2], color='black')
+plt.axvline(f_peaks[-1], color='black')
+plt.axvline(region_3_lb, color='green')
+plt.axvline(region_3_ub, color='green')
+plt.xlabel('Frequencies [Hz]')
+plt.ylabel('Photodiode readings [V]')
+plt.title(title)
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig('data_temp_2/figures/temperature/only_temp.png')
+plt.show()
+
+fit_residuals(func=transmission_temp_scaled_only_temp, x=restricted_freq_scaled, y=restricted_pd, params=popt,
+              x_label='Frequencies [Hz]', y_label='Residuals [V]', title='', file_name=f'data_temp_2/figures/temperature/residuals/resid_temp.png', save=True)

@@ -20,6 +20,11 @@ rb_mass = 1.67e-27 * 87   # kg
 c = 3e8
 term2 = kb / (c**2 * rb_mass)
 
+center_third_gauss = (9.217 + 3.7710e5) * 1e9
+
+picture_lb = (7.1 + 3.7710e5) * 1e9
+picture_ub = (3.2 + 3.7711e5) * 1e9
+
 lin_fit_lb = (7.1 + 3.7710e5) * 1e9
 lin_fit_ub = (8.15 + 3.7710e5) * 1e9
 region_3_lb = (0.3 + 3.7711e5) * 1e9
@@ -29,12 +34,20 @@ region_2_ub = (2.8 + 3.7711e5) * 1e9
 region_1_lb = (0.8 + 3.7711e5) * 1e9
 region_1_ub = (1.6 + 3.7711e5) * 1e9
 
+'''lin_fit_lb = (7.1 + 3.7710e5) * 1e9
+lin_fit_ub = (8.15 + 3.7710e5) * 1e9
+region_3_lb = (0.3 + 3.7711e5) * 1e9
+region_3_ub = (2.3 + 3.7711e5) * 1e9
+region_2_lb = (1.8 + 3.7711e5) * 1e9
+region_2_ub = (2.3 + 3.7711e5) * 1e9
+region_1_lb = (0.8 + 3.7711e5) * 1e9
+region_1_ub = (1.6 + 3.7711e5) * 1e9'''
+
 scale1_guess = 1.35
 scale2_guess = 4
 
 os.makedirs('data_temp_2/figures/temperature', exist_ok=True)
 os.makedirs('data_temp_2/figures/temperature/residuals', exist_ok=True)
-# figure_name = f'new_calib_temp_fit_{lin_fit_lb/1e9-3.7711e5:.2g}_{lin_fit_ub/1e9-3.7711e5:.2g}.png'
 
 #####################################################################################################
 
@@ -51,13 +64,11 @@ frequencies_reshaped = frequencies.reshape(-1, 1)
 fs = scaler.fit_transform(frequencies_reshaped)
 scaled_frequencies = fs.flatten()
 
-# relevant scaling parameters
 scale_factor = (scaler.data_max_ - scaler.data_min_)[0]
 x_min = (scaler.data_min_)[0]
 
-# restricting region of fit
 mask = (scaled_frequencies >= ((lin_fit_lb - x_min) / scale_factor)) & (
-    scaled_frequencies <= ((lin_fit_ub - x_min) / scale_factor))
+    scaled_frequencies <= ((region_3_ub - x_min) / scale_factor))
 lin_region_freq_scaled = scaled_frequencies[mask]
 lin_region_pd = photodiode[mask]
 
@@ -66,35 +77,54 @@ def linear(x, a, b):
     return a * x + b
 
 
-popt, pcov = curve_fit(linear, lin_region_freq_scaled, lin_region_pd)
+def optical_density_scaled(f, scale, temp, f0):
+    return scale / np.sqrt(temp) * np.exp(- ((1-f/f0*scale_factor - x_min/f0)**2) / (2 * term2 * temp))
+
+
+def transmission_temp_scaled_3gauss(x, slope, intercept, scale3, scale1, scale2, temp):
+    return (slope * x + intercept) * (np.exp(- optical_density_scaled(f=x, scale=scale3, temp=temp, f0=center_third_gauss)
+                                             - optical_density_scaled(f=x, scale=scale1, temp=temp, f0=f_peaks[-2])
+                                             - optical_density_scaled(f=x, scale=scale2, temp=temp, f0=f_peaks[-1])))
+
+
+popt, pcov = curve_fit(transmission_temp_scaled_3gauss,
+                       lin_region_freq_scaled, lin_region_pd)
+
+x_lin = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 100)
+y_lin_gauss = linear(x_lin, popt[0], popt[1])
+y_fit = transmission_temp_scaled_3gauss(x_lin, *popt)
+
+mask = (scaled_frequencies >= ((lin_fit_lb - x_min) / scale_factor)) & (
+    scaled_frequencies <= ((lin_fit_ub - x_min) / scale_factor))
+lin_region_freq_scaled = scaled_frequencies[mask]
+lin_region_pd = photodiode[mask]
+
+popt, pcov = curve_fit(linear,
+                       lin_region_freq_scaled, lin_region_pd)
 fixed_slope = popt[0]
 fixed_intercept = popt[1]
 
-
-x_lin = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 100)
 y_lin = linear(x_lin, *popt)
 x_lin = np.linspace(min(frequencies), max(frequencies), 100)
 
-title = f'Fitting region: ({lin_fit_lb/1e9-3.7710e5:.2g} - {lin_fit_ub/1e9-3.7710e5:.2g} GHz) + 377.11 THz'
+title = f'Fitting region: ({lin_fit_lb/1e9-3.7710e5:.2g} - {region_3_ub/1e9-3.7710e5:.2g} GHz) + 377.11 THz'
 
 plt.figure()
 plt.scatter(frequencies, photodiode, label='Data',
             color='blue', s=5, marker='.')
-plt.plot(x_lin, y_lin, label=f'Fit result', color='red', linewidth=2)
-plt.axvline(lin_fit_lb, color='green')
-plt.axvline(lin_fit_ub, color='green')
+plt.plot(x_lin, y_lin, label=f'Linear fit', color='green', linewidth=2)
+y_min, y_max = plt.gca().get_ylim()
+plt.fill_betweenx(y=np.linspace(y_min, y_max, 100),
+                  x1=lin_fit_lb, x2=lin_fit_ub, color='green', alpha=0.3)
 plt.xlabel('Frequencies [Hz]')
 plt.ylabel('Photodiode readings [V]')
-plt.title(title)
+plt.xlim(picture_lb, picture_ub)
+plt.ylim(0.5, 2)
 plt.grid()
 plt.legend()
 plt.tight_layout()
-plt.savefig('data_temp_2/figures/temperature/linear.png')
+plt.savefig('data_temp_2/figures/temperature/linear_2.png')
 plt.close()
-
-
-def optical_density_scaled(f, scale, temp, f0):
-    return scale / np.sqrt(temp) * np.exp(- ((1-f/f0*scale_factor - x_min/f0)**2) / (2 * term2 * temp))
 
 
 def transmission_temp_scaled(x, scale1, scale2, temp):
@@ -115,7 +145,8 @@ restricted_pd = photodiode[mask]
 popt, pcov = curve_fit(transmission_temp_scaled, xdata=restricted_freq_scaled,
                        ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
 fixed_scale1 = popt[0]
-fixed_temp = popt[1]
+fixed_scale2 = popt[1]
+fixed_temp = popt[2]
 
 f = np.linspace(min(frequencies), max(frequencies), 500)
 f_sc = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 500)
@@ -140,6 +171,7 @@ plt.axvline(region_3_ub, color='green')
 plt.xlabel('Frequencies [Hz]')
 plt.ylabel('Photodiode readings [V]')
 plt.title(title)
+plt.xlim(picture_lb, picture_ub)
 plt.grid()
 plt.legend()
 plt.tight_layout()
@@ -149,17 +181,17 @@ plt.close()
 fit_residuals(func=transmission_temp_scaled, x=restricted_freq_scaled, y=restricted_pd, params=popt,
               x_label='Frequencies [Hz]', y_label='Residuals [V]', title='', file_name=f'data_temp_2/figures/temperature/residuals/resid_3.png', save=True)
 
-temp_list = []
-d_temp_list = []
+temp_list_1 = []
+d_temp_list_1 = []
 
-for i in range(100):
+for i in range(10):
     def transmission_temp_scaled_region_2(x, scale2, temp):
         return (fixed_slope * x + fixed_intercept) * (np.exp(- optical_density_scaled(f=x, scale=fixed_scale1, temp=fixed_temp, f0=f_peaks[-2])
                                                              - optical_density_scaled(f=x, scale=scale2, temp=temp, f0=f_peaks[-1])))
 
     lower_bounds = [0.5, 273]
     upper_bounds = [np.inf, 1000]
-    p0 = [scale2_guess, 330]
+    p0 = [fixed_scale2, fixed_temp]
 
     mask = (scaled_frequencies >= ((region_2_lb - x_min) / scale_factor)) & (
         scaled_frequencies <= ((region_2_ub - x_min) / scale_factor))
@@ -170,14 +202,37 @@ for i in range(100):
                            ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
     fixed_scale2 = popt[0]
     fixed_temp = popt[1]
-    temp_list.append(popt[1])
-    d_temp_list.append(np.sqrt(pcov[1, 1]))
+    temp_list_1.append(popt[1])
+    d_temp_list_1.append(np.sqrt(pcov[1, 1]))
+
+    if i == 9:
+        x_fit = np.linspace(min(scaled_frequencies),
+                            max(scaled_frequencies), 1000)
+        y_fit = transmission_temp_scaled_region_2(x_fit, *popt)
+        x_fit = np.linspace(min(frequencies), max(frequencies), 1000)
+
+        plt.figure()
+        plt.rcParams.update({'font.size': 10})
+        plt.scatter(frequencies, photodiode, label='Data',
+                    color='blue', s=5, marker='.')
+        plt.plot(x_fit, y_fit, label=f'Fit', color='red', linewidth=2, ls='-')
+        plt.fill_betweenx(y=np.linspace(0.4, 2.1, 100),
+                          x1=region_2_lb, x2=region_2_ub, color='red', alpha=0.3)
+        plt.xlabel('Frequencies [Hz]')
+        plt.ylabel('Photodiode readings [V]')
+        plt.xlim((0.3 + 3.7711e5) * 1e9, picture_ub)
+        plt.ylim(0.8, 1.6)
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig('data_temp_2/figures/temperature/region2_range.png')
+        plt.close()
 
     def transmission_temp_scaled_region_1(x, scale1, temp):
         return (fixed_slope * x + fixed_intercept) * (np.exp(- optical_density_scaled(f=x, scale=scale1, temp=temp, f0=f_peaks[-2])
                                                              - optical_density_scaled(f=x, scale=fixed_scale2, temp=fixed_temp, f0=f_peaks[-1])))
 
-    p0 = [scale1_guess, 330]
+    p0 = [fixed_scale1, fixed_temp]
 
     mask = (scaled_frequencies >= ((region_1_lb - x_min) / scale_factor)) & (
         scaled_frequencies <= ((region_1_ub - x_min) / scale_factor))
@@ -187,16 +242,213 @@ for i in range(100):
     popt, pcov = curve_fit(transmission_temp_scaled_region_1, xdata=restricted_freq_scaled,
                            ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
     fixed_scale1 = popt[0]
-    temp_list.append(popt[1])
-    d_temp_list.append(np.sqrt(pcov[1, 1]))
+    temp_list_1.append(popt[1])
+    d_temp_list_1.append(np.sqrt(pcov[1, 1]))
+
+    if i == 9:
+        x_fit = np.linspace(min(scaled_frequencies),
+                            max(scaled_frequencies), 1000)
+        y_fit = transmission_temp_scaled_region_1(x_fit, *popt)
+        x_fit = np.linspace(min(frequencies), max(frequencies), 1000)
+
+        plt.figure()
+        plt.rcParams.update({'font.size': 10})
+        plt.scatter(frequencies, photodiode, label='Data',
+                    color='blue', s=5, marker='.')
+        plt.plot(x_fit, y_fit, label=f'Fit', color='red', linewidth=2)
+        y_min, y_max = plt.gca().get_ylim()
+        plt.fill_betweenx(y=np.linspace(0.4, 2.1, 100),
+                          x1=region_1_lb, x2=region_1_ub, color='red', alpha=0.3)
+        plt.xlabel('Frequencies [Hz]')
+        plt.ylabel('Photodiode readings [V]')
+        plt.xlim((0.3 + 3.7711e5) * 1e9, picture_ub)
+        plt.ylim(0.5, 2)
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig('data_temp_2/figures/temperature/region1_range.png')
+        plt.close()
+
 
 plt.figure()
 plt.rcParams.update({'font.size': 10})
-plt.errorbar(range(len(temp_list)), y=temp_list, yerr=d_temp_list,
-             color='blue', fmt='.', capsize=5, ls='')
+plt.scatter(frequencies, photodiode, label='Data',
+            color='blue', s=5, marker='.')
+y_min, y_max = plt.gca().get_ylim()
+plt.fill_betweenx(y=np.linspace(0.4, 2.1, 100),
+                  x1=region_1_lb, x2=region_1_ub, color='red', alpha=0.3)
+plt.fill_betweenx(y=np.linspace(0.4, 2.1, 100),
+                  x1=region_2_lb, x2=region_2_ub, color='red', alpha=0.3)
+plt.xlabel('Frequencies [Hz]')
+plt.ylabel('Photodiode readings [V]')
+plt.xlim(picture_lb, picture_ub)
+plt.ylim(0.5, 2)
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig('data_temp_2/figures/temperature/region12_1.png')
+plt.close()
+
+temp_list_2 = []
+d_temp_list_2 = []
+
+region_2_lb = (1.8 + 3.7711e5) * 1e9
+region_2_ub = (2.3 + 3.7711e5) * 1e9
+
+for i in range(10):
+    def transmission_temp_scaled_region_2(x, scale2, temp):
+        return (fixed_slope * x + fixed_intercept) * (np.exp(- optical_density_scaled(f=x, scale=fixed_scale1, temp=fixed_temp, f0=f_peaks[-2])
+                                                             - optical_density_scaled(f=x, scale=scale2, temp=temp, f0=f_peaks[-1])))
+
+    lower_bounds = [0.5, 273]
+    upper_bounds = [np.inf, 1000]
+    p0 = [fixed_scale2, fixed_temp]
+
+    mask = (scaled_frequencies >= ((region_2_lb - x_min) / scale_factor)) & (
+        scaled_frequencies <= ((region_2_ub - x_min) / scale_factor))
+    restricted_freq_scaled = scaled_frequencies[mask]
+    restricted_pd = photodiode[mask]
+
+    popt, pcov = curve_fit(transmission_temp_scaled_region_2, xdata=restricted_freq_scaled,
+                           ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
+    fixed_scale2 = popt[0]
+    fixed_temp = popt[1]
+    temp_list_2.append(popt[1])
+    d_temp_list_2.append(np.sqrt(pcov[1, 1]))
+
+    if i == 9:
+        x_fit = np.linspace(min(scaled_frequencies),
+                            max(scaled_frequencies), 1000)
+        y_fit = transmission_temp_scaled_region_2(x_fit, *popt)
+        x_fit = np.linspace(min(frequencies), max(frequencies), 1000)
+
+        plt.figure()
+        plt.rcParams.update({'font.size': 10})
+        plt.scatter(frequencies, photodiode, label='Data',
+                    color='blue', s=5, marker='.')
+        plt.plot(x_fit, y_fit, label='Fit', color='red', linewidth=2, ls='-')
+        y_min, y_max = plt.gca().get_ylim()
+        plt.fill_betweenx(y=np.linspace(0.4, 2.1, 100),
+                          x1=region_2_lb, x2=region_2_ub, color='red', alpha=0.3)
+        plt.xlabel('Frequencies [Hz]')
+        plt.ylabel('Photodiode readings [V]')
+        plt.xlim((0.3 + 3.7711e5) * 1e9, picture_ub)
+        plt.ylim(0.5, 2)
+        plt.grid()
+        plt.legend()
+        plt.tight_layout()
+        plt.savefig('data_temp_2/figures/temperature/region2_range_2.png')
+        plt.close()
+
+    def transmission_temp_scaled_region_1(x, scale1, temp):
+        return (fixed_slope * x + fixed_intercept) * (np.exp(- optical_density_scaled(f=x, scale=scale1, temp=temp, f0=f_peaks[-2])
+                                                             - optical_density_scaled(f=x, scale=fixed_scale2, temp=fixed_temp, f0=f_peaks[-1])))
+
+    p0 = [fixed_scale1, fixed_temp]
+
+    mask = (scaled_frequencies >= ((region_1_lb - x_min) / scale_factor)) & (
+        scaled_frequencies <= ((region_1_ub - x_min) / scale_factor))
+    restricted_freq_scaled = scaled_frequencies[mask]
+    restricted_pd = photodiode[mask]
+
+    popt, pcov = curve_fit(transmission_temp_scaled_region_1, xdata=restricted_freq_scaled,
+                           ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
+    fixed_scale1 = popt[0]
+    temp_list_2.append(popt[1])
+    d_temp_list_2.append(np.sqrt(pcov[1, 1]))
+
+plt.figure()
+plt.rcParams.update({'font.size': 10})
+plt.scatter(frequencies, photodiode, label='Data',
+            color='blue', s=5, marker='.')
+y_min, y_max = plt.gca().get_ylim()
+plt.fill_betweenx(y=np.linspace(0.4, 2.1, 100),
+                  x1=region_1_lb, x2=region_1_ub, color='orange', alpha=0.3)
+plt.fill_betweenx(y=np.linspace(0.4, 2.1, 100),
+                  x1=region_2_lb, x2=region_2_ub, color='orange', alpha=0.3)
+plt.xlabel('Frequencies [Hz]')
+plt.ylabel('Photodiode readings [V]')
+plt.xlim(picture_lb, picture_ub)
+plt.ylim(0.5, 2)
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig('data_temp_2/figures/temperature/region12_2.png')
+plt.close()
+
+
+df = pd.DataFrame()
+df['t1'] = temp_list_1
+df['dt1'] = d_temp_list_1
+df['t2'] = temp_list_2
+df['dt2'] = d_temp_list_1
+df.to_csv('data_temp_2/clean_data/temp_list.csv', index=False)
+
+
+plt.figure()
+plt.errorbar(x=range(len(temp_list_1)), y=temp_list_1, yerr=d_temp_list_1, fmt='.', capsize=5, color='red')
 plt.xlabel('Iteration')
-plt.ylabel('Temperature')
+plt.ylabel('Temperature [K]')
 plt.grid()
 plt.tight_layout()
 plt.savefig('data_temp_2/figures/temperature/temp_iteration.png')
+plt.close()
+
+plt.figure()
+plt.errorbar(x=range(len(temp_list_1)), y=temp_list_1, yerr=d_temp_list_1, fmt='.', capsize=5, color='red')
+plt.errorbar(x=range(len(temp_list_2)), y=temp_list_2, yerr=d_temp_list_2, fmt='.', capsize=5, color='orange')
+plt.xlabel('Iteration')
+plt.ylabel('Temperature [K]')
+plt.grid()
+plt.tight_layout()
+plt.savefig('data_temp_2/figures/temperature/temp_iteration_2.png')
+plt.close()
+
+
+
+'''def transmission_temp_scaled_only_temp(
+    x, temp): return transmission_temp_scaled(x, fixed_scale1, fixed_scale2, temp)
+
+lower_bounds = [273]
+upper_bounds = [1000]
+p0 = [330]
+
+mask = (scaled_frequencies >= ((region_3_lb - x_min) / scale_factor)) & (
+    scaled_frequencies <= ((region_3_ub - x_min) / scale_factor))
+restricted_freq_scaled = scaled_frequencies[mask]
+restricted_pd = photodiode[mask]
+
+popt, pcov = curve_fit(transmission_temp_scaled_only_temp, xdata=restricted_freq_scaled,
+                       ydata=restricted_pd, bounds=(lower_bounds, upper_bounds), p0=p0, maxfev=10000)
+
+f = np.linspace(min(frequencies), max(frequencies), 500)
+f_sc = np.linspace(min(scaled_frequencies), max(scaled_frequencies), 500)
+pd_fit = transmission_temp_scaled_only_temp(f_sc, *popt)
+
+print('Fitting region 3, only with temperature:')
+print(f'temperature:\t{popt[0]} +/- {np.sqrt(pcov[0, 0])} K\n')
+
+title = f'Fitting region: ({region_3_lb/1e9-3.7711e5:.2g} - {region_3_ub/1e9-3.7711e5:.2g} GHz) + 377.11 THz'
+
+plt.figure()
+plt.rcParams.update({'font.size': 10})
+plt.scatter(frequencies, photodiode, label='Data',
+            color='blue', s=5, marker='.')
+plt.plot(f, pd_fit, label=f'Fit result, T$={popt[0]:.1f}\\pm{np.sqrt(pcov[0, 0]):.1f}$K',
+         color='red', linewidth=2)
+plt.axvline(f_peaks[-2], color='black')
+plt.axvline(f_peaks[-1], color='black')
+plt.axvline(region_3_lb, color='green')
+plt.axvline(region_3_ub, color='green')
+plt.xlim(picture_lb, picture_ub)
+plt.xlabel('Frequencies [Hz]')
+plt.ylabel('Photodiode readings [V]')
+plt.title(title)
+plt.grid()
+plt.legend()
+plt.tight_layout()
+plt.savefig('data_temp_2/figures/temperature/only_temp_iter.png')
 plt.show()
+
+fit_residuals(func=transmission_temp_scaled_only_temp, x=restricted_freq_scaled, y=restricted_pd, params=popt,
+              x_label='Frequencies [Hz]', y_label='Residuals [V]', title='', file_name=f'data_temp_2/figures/temperature/residuals/resid_temp_iter.png', save=True)'''
