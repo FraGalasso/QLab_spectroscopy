@@ -157,18 +157,18 @@ coeff12, dcoeff12 = lfn.plot_ufloat_fit(int87_x, peaks_12, lfn.lin_model, x_labe
 
 plt.figure(figsize=(12, 10))
 plt.rcParams.update({'font.size': 16})
-plt.errorbar(nominal_values(int87_x), nominal_values(peaks_11), xerr=std_devs(int87_x), yerr=std_devs(peaks_11), fmt='.', color='green', label=f'F=1$\\to$F\'=1 - ({coeff11[1]:.3g} ± {dcoeff11[1]:.3g}) V', capsize=5)
-plt.errorbar(nominal_values(int87_x), nominal_values(peaks_12), xerr=std_devs(int87_x), yerr=std_devs(peaks_12), fmt='.', color='blue', label=f'F=1$\\to$F\'=2 - ({coeff12[1]:.3g} ± {dcoeff12[1]:.3g}) V', capsize=5)
-plt.errorbar(nominal_values(intcross87_x), nominal_values(peaks_cross87), xerr=std_devs(intcross87_x), yerr=std_devs(peaks_cross87), fmt='.', color='red', label=f'Crosspeak - ({coeffcross87[1]:.3g} ± {dcoeffcross85[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(int87_x), nominal_values(peaks_11)-coeff11[1], xerr=std_devs(int87_x), yerr=std_devs(peaks_11), fmt='.', color='green', label=f'F=1$\\to$F\'=1 - ({coeff11[1]:.3g} ± {dcoeff11[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(int87_x), nominal_values(peaks_12)-coeff12[1], xerr=std_devs(int87_x), yerr=std_devs(peaks_12), fmt='.', color='blue', label=f'F=1$\\to$F\'=2 - ({coeff12[1]:.3g} ± {dcoeff12[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(intcross87_x), nominal_values(peaks_cross87)-coeffcross87[1], xerr=std_devs(intcross87_x), yerr=std_devs(peaks_cross87), fmt='.', color='red', label=f'Crosspeak - ({coeffcross87[1]:.3g} ± {dcoeffcross85[1]:.3g}) V', capsize=5)
 
 fitstr11 = f'y = ({coeff11[0]:.3g} ± {dcoeff11[0]:.3g}) * x'
 fitstr12 = f'y = ({coeff12[0]:.3g} ± {dcoeff12[0]:.3g}) * x'
 fitstrcross87 = f'y = ({coeffcross87[0]:.3g} ± {dcoeffcross87[0]:.3g}) * x'
         
 x_fit = np.linspace(min(nominal_values(int87_x)), max(nominal_values(int87_x)), 100)
-y_fit11 = lfn.lin_model(coeff11, x_fit)
-y_fit12 = lfn.lin_model(coeff12, x_fit)
-y_fitcross87 = lfn.lin_model(coeffcross87, x_fit)
+y_fit11 = coeff11[0] * x_fit
+y_fit12 = coeff12[0] * x_fit
+y_fitcross87 = coeffcross87[0] * x_fit
 plt.plot(x_fit, y_fit11, label=fitstr11, color='green', linestyle='--')
 plt.plot(x_fit, y_fit12, label=fitstr12, color='blue', linestyle='--')
 plt.plot(x_fit, y_fitcross87, label=fitstrcross87, color='red', linestyle='--')
@@ -194,18 +194,18 @@ fig_legend.savefig('data_linewidth/figures_unc/legend_87.png', bbox_inches='tigh
 
 plt.figure(figsize=(12, 10))
 plt.rcParams.update({'font.size': 16})
-plt.errorbar(nominal_values(int85_x), nominal_values(peaks_22), xerr=std_devs(int85_x), yerr=std_devs(peaks_22), fmt='.', color='green', label=f'F=2$\\to$F\'=2 - ({coeff22[1]:.3g} ± {dcoeff22[1]:.3g}) V', capsize=5)
-plt.errorbar(nominal_values(int85_x), nominal_values(peaks_23), xerr=std_devs(int85_x), yerr=std_devs(peaks_23), fmt='.', color='blue', label=f'F=2$\\to$F\'=3 - ({coeff23[1]:.3g} ± {dcoeff23[1]:.3g}) V', capsize=5)
-plt.errorbar(nominal_values(intcross85_x), nominal_values(peaks_cross85), xerr=std_devs(intcross85_x), yerr=std_devs(peaks_cross85), fmt='.', color='red', label=f'Crosspeak - ({coeffcross85[1]:.3g} ± {dcoeffcross85[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(int85_x), nominal_values(peaks_22)-coeff22[1], xerr=std_devs(int85_x), yerr=std_devs(peaks_22), fmt='.', color='green', label=f'F=2$\\to$F\'=2 - ({coeff22[1]:.3g} ± {dcoeff22[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(int85_x), nominal_values(peaks_23)-coeff23[1], xerr=std_devs(int85_x), yerr=std_devs(peaks_23), fmt='.', color='blue', label=f'F=2$\\to$F\'=3 - ({coeff23[1]:.3g} ± {dcoeff23[1]:.3g}) V', capsize=5)
+plt.errorbar(nominal_values(intcross85_x), nominal_values(peaks_cross85)-coeffcross85[1], xerr=std_devs(intcross85_x), yerr=std_devs(peaks_cross85), fmt='.', color='red', label=f'Crosspeak - ({coeffcross85[1]:.3g} ± {dcoeffcross85[1]:.3g}) V', capsize=5)
 
 fitstr22 = f'y = ({coeff22[0]:.3g} ± {dcoeff22[0]:.3g}) * x'
 fitstr23 = f'y = ({coeff23[0]:.3g} ± {dcoeff23[0]:.3g}) * x'
 fitstrcross85 = f'y = ({coeffcross85[0]:.3g} ± {dcoeffcross85[0]:.3g}) * x'
         
 x_fit = np.linspace(min(nominal_values(int85_x)), max(nominal_values(int85_x)), 100)
-y_fit22 = lfn.lin_model(coeff22, x_fit)
-y_fit23 = lfn.lin_model(coeff23, x_fit)
-y_fitcross85 = lfn.lin_model(coeffcross85, x_fit)
+y_fit22 = coeff22[0] * x_fit
+y_fit23 = coeff23[0] * x_fit
+y_fitcross85 = coeffcross85[0] * x_fit
 plt.plot(x_fit, y_fit22, label=fitstr22, color='green', linestyle='--')
 plt.plot(x_fit, y_fit23, label=fitstr23, color='blue', linestyle='--')
 plt.plot(x_fit, y_fitcross85, label=fitstrcross85, color='red', linestyle='--')
